@@ -1,7 +1,9 @@
 class CategoryController < ApplicationController
+  before_action :authenticate_user!
   before_action :set_category, only: [:update, :show, :destroy]
+
   def index
-    @categories = Category.page(params[:page]).per(4)
+    @categories = current_user.categories.page(params[:page]).per(4)
     render json: @categories, meta: pagination_meta(@categories)
   end
 
@@ -10,7 +12,7 @@ class CategoryController < ApplicationController
   end
 
   def create
-    @category = Category.new(category_params)
+    @category = current_user.categories.new(category_params)
     if @category.save
       render json: @category, status: :created
     else
@@ -50,9 +52,10 @@ class CategoryController < ApplicationController
     }
   end
 
-
   def set_category
-    @category = Category.find(params[:id])
+    @category = current_user.categories.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Category not found" }, status: :not_found
   end
 
   def category_params

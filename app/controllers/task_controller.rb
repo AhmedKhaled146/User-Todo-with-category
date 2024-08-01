@@ -1,4 +1,5 @@
 class TaskController < ApplicationController
+    before_action :authenticate_user!
     before_action :set_category
     before_action :set_task, only: [:show, :update, :destroy]
 
@@ -29,6 +30,7 @@ class TaskController < ApplicationController
     # POST /categories/:category_id/tasks
     def create
       @task = @category.tasks.build(task_params)
+      @task.user = current_user
       if @task.save
         render json: @task, status: :created
       else
@@ -68,11 +70,15 @@ class TaskController < ApplicationController
     end
 
     def set_category
-      @category = Category.find(params[:category_id])
+      @category = current_user.categories.find(params[:category_id])
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Category not found" }, status: :not_found
     end
 
     def set_task
-      @task = @category.tasks.find(params[:task_id])
+      @task = @category.tasks.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Task not found" }, status: :not_found
     end
 
     def task_params
